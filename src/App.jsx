@@ -30,6 +30,15 @@ function WebSocketComponent() {
     }
   };
 
+  const handleEnd = () => {
+    if (iframeRef.current) {
+      iframeRef.current.contentWindow.postMessage(
+        { cmd: "end" },
+        new URL(url).origin
+      );
+    }
+  };
+
   return (
     <div style={{ display: "flex", flexDirection: "column" }}>
       <div>
@@ -49,6 +58,7 @@ function WebSocketComponent() {
         </button>
         <button onClick={handleCapture}>Kayıtları Yakala</button>
         <button onClick={() => setActions([])}>Kayıtları Sil</button>
+        <button onClick={handleEnd}>Kaydı Sonlandır</button>
         <iframe
           ref={iframeRef}
           title="Interaction Frame"
@@ -60,12 +70,13 @@ function WebSocketComponent() {
         {actions.map((action, index) => {
           return (
             <div key={index}>
-              {action.action === "navigate" ? (
+              {action.action === "navigate" && (
                 <div style={{ display: "flex", fontWeight: 600, gap: 10 }}>
                   <span>action:{action.action || "-"}</span>
                   <span>to:{action.to || "-"}</span>
                 </div>
-              ) : (
+              )}
+              {(action.action === "click" || action.action === "input") && (
                 <div style={{ display: "flex", fontWeight: 600, gap: 10 }}>
                   <span>action:{action.action || "-"}</span>
                   <span>element:{action.element || "-"}</span>
@@ -76,6 +87,13 @@ function WebSocketComponent() {
                   {action.action === "input" && (
                     <span>value:{action.value}</span>
                   )}
+                </div>
+              )}
+              {(action.action === "session" ||
+                action.action === "localStorage") && (
+                <div style={{ display: "flex", fontWeight: 600, gap: 10 }}>
+                  <span>action:{action.action || "-"}</span>
+                  <span>data:{action.data || "-"}</span>
                 </div>
               )}
             </div>
