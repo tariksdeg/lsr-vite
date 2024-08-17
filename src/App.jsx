@@ -10,6 +10,7 @@ function WebSocketComponent() {
   const iframeRef = useRef(null);
   const [actions, setActions] = useState([]);
   const [isScript, setIsScript] = useState(true);
+  const [iframeDiv, setIframeDiv] = useState(false);
 
   useEffect(() => {
     window.addEventListener("message", (event) => {
@@ -43,20 +44,26 @@ function WebSocketComponent() {
       );
       // Kısa bir gecikmeden sonra iframe'i DOM'dan kaldır
       iframeRef.current.src = ""; // Mesajın gönderilmesi için kısa bir gecikme
+      setTimeout(() => {
+        setIframeDiv(false);
+      }, 100);
     }
   };
 
   const handleOpenURL = () => {
-    iframeRef.current.src = url;
-    setActions((prev) => [...prev, { action: "navigate", to: url }]);
+    setIframeDiv(true);
+    setTimeout(() => {
+      iframeRef.current.src = url;
+      setActions((prev) => [...prev, { action: "navigate", to: url }]);
 
-    iframeRef.current.onload = () => {
-      console.log("Iframe loaded");
-      iframeRef.current.contentWindow.postMessage(
-        { cmd: "capture" },
-        new URL(url).origin
-      );
-    };
+      iframeRef.current.onload = () => {
+        console.log("Iframe loaded");
+        iframeRef.current.contentWindow.postMessage(
+          { cmd: "capture" },
+          new URL(url).origin
+        );
+      };
+    }, 1000);
   };
 
   const scriptControl = async () => {
@@ -94,13 +101,17 @@ function WebSocketComponent() {
         <button disabled={isScript} onClick={handleEnd}>
           Kaydı Sonlandır
         </button>
-        <iframe
-          ref={iframeRef}
-          title="Interaction Frame"
-          width="800"
-          height="600"
-        />
       </div>
+      {iframeDiv && (
+        <div>
+          <iframe
+            ref={iframeRef}
+            title="Interaction Frame"
+            width="800"
+            height="600"
+          />
+        </div>
+      )}
       <div style={{ display: "flex", flexDirection: "column" }}>
         {actions.map((action, index) => {
           return (
