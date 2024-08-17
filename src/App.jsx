@@ -1,11 +1,16 @@
+import axios from "axios";
 import React, { useState, useEffect, useRef } from "react";
 
 function WebSocketComponent() {
-  const [url, setUrl] = useState("http://10.0.30.5:3000/login");
+  const [url, setUrl] = useState(
+    "https://tarik-degirmenci-website.vercel.app/"
+    // "http://10.0.30.5:3000/login"
+  );
   const ws = useRef(null);
   const iframeRef = useRef(null);
   const [actions, setActions] = useState([]);
-  console.log(`actions ==>`, actions);
+  const [isScript, setIsScript] = useState(true);
+
   useEffect(() => {
     window.addEventListener("message", (event) => {
       let jsonDataStr = JSON.stringify(event.data, null, 2);
@@ -36,7 +41,37 @@ function WebSocketComponent() {
         { cmd: "end" },
         new URL(url).origin
       );
+      // Kısa bir gecikmeden sonra iframe'i DOM'dan kaldır
+      iframeRef.current.src = ""; // Mesajın gönderilmesi için kısa bir gecikme
     }
+  };
+
+  const handleOpenURL = () => {
+    iframeRef.current.src = url;
+    setActions((prev) => [...prev, { action: "navigate", to: url }]);
+
+    iframeRef.current.onload = () => {
+      console.log("Iframe loaded");
+      iframeRef.current.contentWindow.postMessage(
+        { cmd: "capture" },
+        new URL(url).origin
+      );
+    };
+  };
+
+  const scriptControl = async () => {
+    axios
+      .get(new URL(url).origin)
+      .then((response) => {
+        const html = response.data;
+        if (html.includes("event-listeners-script")) {
+          alert("Script found succesfully");
+          setIsScript(false);
+        } else {
+          alert("Script couldn't find.");
+        }
+      })
+      .catch((error) => console.error("Error fetching page:", error));
   };
 
   return (
@@ -48,17 +83,17 @@ function WebSocketComponent() {
           onChange={(e) => setUrl(e.target.value)}
           placeholder="URL girin"
         />
-        <button
-          onClick={() => {
-            iframeRef.current.src = url;
-            setActions((prew) => [...prew, { action: "navigate", to: url }]);
-          }}
-        >
-          URL'yi Aç
+        <button onClick={scriptControl}>Script Kontrol</button>
+        <button disabled={isScript} onClick={handleOpenURL}>
+          Kaydı Başlat
         </button>
-        <button onClick={handleCapture}>Kayıtları Yakala</button>
-        <button onClick={() => setActions([])}>Kayıtları Sil</button>
-        <button onClick={handleEnd}>Kaydı Sonlandır</button>
+        {/* <button onClick={handleCapture}>Kayıtları Yakala</button> */}
+        <button disabled={isScript} onClick={() => setActions([])}>
+          Kayıtları Sil
+        </button>
+        <button disabled={isScript} onClick={handleEnd}>
+          Kaydı Sonlandır
+        </button>
         <iframe
           ref={iframeRef}
           title="Interaction Frame"
